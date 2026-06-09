@@ -215,29 +215,30 @@
 
     <div id="toast"></div>
 
-    <script type="module">
-        import { initializeApp }        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getDatabase, ref, push, onValue, remove, set }
-                                        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    <!-- Firebase SDK (non-module, compat version) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-        /* ── Firebase Config ── */
+    <script>
+        /* ── Firebase Init ── */
         const firebaseConfig = {
             databaseURL: "https://transport-fe3d9-default-rtdb.asia-southeast1.firebasedatabase.app/"
         };
-        const app = initializeApp(firebaseConfig);
-        const db  = getDatabase(app);
-        const transportsRef = ref(db, 'transports');
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const transportsRef = db.ref('transports');
 
         /* ── State ── */
         let transportData  = {};
         let currentEditKey = null;
 
-        /* ── Firebase Listener ── */
-        onValue(transportsRef, (snapshot) => {
+        /* ── Firebase Real-time Listener ── */
+        transportsRef.on('value', (snapshot) => {
             transportData = snapshot.val() ?? {};
             const statusEl = document.getElementById("connectionStatus");
             statusEl.textContent = "✅ Cloud Server से Connected";
             statusEl.classList.add("connected");
+            // Search box में कुछ लिखा है तो results refresh करो
             const q = document.getElementById("searchInput").value.trim();
             if (q) searchVillage(q);
         }, (err) => {
@@ -274,19 +275,17 @@
                     showToast("⚠️ आपका browser voice typing support नहीं करता", "warning");
                     reject("not-supported"); return;
                 }
-
-                const input  = document.getElementById(inputId);
-                const micBtn = document.getElementById(micId);
+                const input      = document.getElementById(inputId);
+                const micBtn     = document.getElementById(micId);
                 const recognition = new SR();
-
-                recognition.lang             = 'en-IN';
-                recognition.interimResults   = false;
-                recognition.maxAlternatives  = 1;
+                recognition.lang            = 'en-IN';
+                recognition.interimResults  = false;
+                recognition.maxAlternatives = 1;
 
                 const origPlaceholder = input.placeholder;
                 input.placeholder = "🎤 बोलिए...";
                 input.classList.add('mic-active');
-                micBtn?.classList.add('listening');
+                if (micBtn) micBtn.classList.add('listening');
 
                 let gotResult = false;
 
@@ -295,25 +294,22 @@
                     input.value = processInput(e.results[0][0].transcript, fieldType);
                     resolve(true);
                 };
-
                 recognition.onerror = (e) => {
                     if (e.error !== 'no-speech') showToast(`Mic error: ${e.error}`, "error");
                     reject(e.error);
                 };
-
                 recognition.onend = () => {
                     input.placeholder = origPlaceholder;
                     input.classList.remove('mic-active');
-                    micBtn?.classList.remove('listening');
+                    if (micBtn) micBtn.classList.remove('listening');
                     if (!gotResult) reject("no-speech");
                 };
-
                 recognition.start();
             });
         }
 
         /* ── Magic Button Flow ── */
-        window.startMagicFlow = async function () {
+        async function startMagicFlow() {
             const btn = document.getElementById("magicBtn");
             const steps = [
                 { label: "🎤 1/3: Transport का नाम बोलें...", field: 'name',     inputId: 'transportName',    micId: 'mic-name'    },
@@ -321,7 +317,6 @@
                 { label: "🎤 3/3: Village Names बोलें...",    field: 'villages', inputId: 'villageNames',     micId: 'mic-villages'},
             ];
             const original = btn.textContent;
-
             try {
                 for (const step of steps) {
                     btn.textContent = step.label;
@@ -334,44 +329,42 @@
             } finally {
                 setTimeout(() => { btn.textContent = original; }, 3500);
             }
-        };
+        }
 
         /* ── Individual Mic ── */
-        window.startRealVoice = function (fieldType, inputId, micId) {
+        function startRealVoice(fieldType, inputId, micId) {
             listenAndFill(fieldType, inputId, micId).catch(() => {});
-        };
+        }
 
         /* ── Save / Update ── */
-        window.addTransport = async function () {
-            const name    = document.getElementById("transportName").value.trim();
-            const numbers = document.getElementById("transportNumbers").value.trim();
+        async function addTransport() {
+            const name     = document.getElementById("transportName").value.trim();
+            const numbers  = document.getElementById("transportNumbers").value.trim();
             const villages = document.getElementById("villageNames").value.trim().toLowerCase();
 
             if (!name || !villages) {
                 showToast("⚠️ Transport Name और Villages ज़रूरी हैं!", "warning");
                 return;
             }
-
             const entry = {
                 name,
                 numbers,
                 villages: villages.split(",").map(v => v.trim()).filter(Boolean),
                 updatedAt: Date.now()
             };
-
             try {
                 if (currentEditKey) {
-                    await set(ref(db, `transports/${currentEditKey}`), entry);
+                    await db.ref('transports/' + currentEditKey).set(entry);
                     showToast("✅ Data Update हो गया!", "success");
                 } else {
-                    await push(transportsRef, entry);
+                    await transportsRef.push(entry);
                     showToast("✅ Data Save हो गया!", "success");
                 }
                 resetForm();
             } catch (err) {
                 showToast("❌ Save नहीं हुआ: " + err.message, "error");
             }
-        };
+        }
 
         /* ── Reset Form ── */
         function resetForm() {
@@ -386,40 +379,40 @@
         }
 
         /* ── Edit Entry ── */
-        window.editEntry = function (key) {
+        function editEntry(key) {
             const item = transportData[key];
             if (!item) return;
             currentEditKey = key;
-            document.getElementById("transportName").value    = item.name    ?? "";
-            document.getElementById("transportNumbers").value = item.numbers ?? "";
-            document.getElementById("villageNames").value     = item.villages?.join(", ") ?? "";
+            document.getElementById("transportName").value    = item.name    || "";
+            document.getElementById("transportNumbers").value = item.numbers || "";
+            document.getElementById("villageNames").value     = item.villages ? item.villages.join(", ") : "";
             document.getElementById("formTitle").textContent  = `📝 Edit: ${item.name}`;
             const btn = document.getElementById("saveBtn");
             btn.textContent = "✏️ Update करें";
             btn.classList.add("edit-mode");
             document.getElementById("transportName").scrollIntoView({ behavior: "smooth", block: "center" });
-        };
+        }
 
         /* ── Delete Entry ── */
-        window.deleteEntry = async function (key) {
+        async function deleteEntry(key) {
             if (!confirm("क्या आप सच में यह data delete करना चाहते हैं?")) return;
             try {
-                await remove(ref(db, `transports/${key}`));
+                await db.ref('transports/' + key).remove();
                 showToast("🗑️ Data Delete हो गया", "success");
             } catch (err) {
                 showToast("❌ Delete नहीं हुआ: " + err.message, "error");
             }
-        };
+        }
 
-        /* ── Search (Debounced) ── */
+        /* ── Search (Debounced + Real-time) ── */
         let searchTimer;
         document.getElementById("searchInput").addEventListener("input", (e) => {
             clearTimeout(searchTimer);
             searchTimer = setTimeout(() => searchVillage(e.target.value.trim()), 200);
         });
 
-        window.searchVillage = function (query = "") {
-            const q = query.toLowerCase().trim();
+        function searchVillage(query) {
+            const q = (query || "").toLowerCase().trim();
             const resultsDiv = document.getElementById("searchResults");
             resultsDiv.innerHTML = "";
             if (!q) return;
@@ -427,22 +420,22 @@
             const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             const regex   = new RegExp(escaped, "gi");
 
-            // ✅ Village name AND transport name दोनों में search
+            // ✅ Transport name + Village name दोनों में search
             const matches = Object.entries(transportData).filter(([, t]) => {
-                const nameMatch    = t.name?.toLowerCase().includes(q);
-                const villageMatch = t.villages?.some(v => v.toLowerCase().includes(q));
+                const nameMatch    = t.name && t.name.toLowerCase().includes(q);
+                const villageMatch = t.villages && t.villages.some(v => v.toLowerCase().includes(q));
                 return nameMatch || villageMatch;
             });
 
             if (!matches.length) {
-                resultsDiv.innerHTML = `<div class="empty-msg">कोई result नहीं मिला।</div>`;
+                resultsDiv.innerHTML = `<div class="empty-msg">❌ कोई result नहीं मिला।</div>`;
                 return;
             }
 
             matches.forEach(([key, t]) => {
-                const villageStr      = (t.villages ?? []).join(", ");
+                const villageStr      = (t.villages || []).join(", ");
                 const highlightedVill = villageStr.replace(regex, m => `<span class="highlight">${m}</span>`);
-                const highlightedName = (t.name ?? "").replace(regex, m => `<span class="highlight">${m}</span>`);
+                const highlightedName = (t.name || "").replace(regex, m => `<span class="highlight">${m}</span>`);
                 const el = document.createElement("div");
                 el.className = "result-item";
                 el.innerHTML = `
@@ -455,10 +448,10 @@
                     </div>`;
                 resultsDiv.appendChild(el);
             });
-        };
+        }
 
         /* ── JSON Download ── */
-        window.downloadJSON = function () {
+        function downloadJSON() {
             if (!Object.keys(transportData).length) {
                 showToast("⚠️ Download करने के लिए कोई data नहीं है!", "warning");
                 return;
@@ -471,7 +464,7 @@
             a.click();
             URL.revokeObjectURL(url);
             showToast("✅ JSON Download हो गया!", "success");
-        };
+        }
     </script>
 </body>
 </html>
