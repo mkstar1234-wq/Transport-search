@@ -1,47 +1,77 @@
-// --- JSON एक्सपोर्ट करने का फंक्शन ---
-window.exportJSON = function() {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(transportData, null, 2));
-    const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", "transport_data.json");
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Live Cloud Transport Manager</title>
+    <style>
+        html, body { margin: 0; padding: 0; height: 100vh; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
+        body { display: flex; flex-direction: column; padding: 12px; max-width: 450px; margin: auto; }
+        h2 { text-align: center; color: #1a73e8; margin: 5px 0; }
+        .card { background: rgba(255, 255, 255, 0.9); padding: 14px; margin-bottom: 10px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.05); }
+        .input-group { position: relative; display: flex; align-items: center; margin-top: 8px; }
+        .input-group input { width: 100%; padding: 12px 40px 12px 12px; border: 1px solid #dadce0; border-radius: 8px; }
+        .box-mic-btn { position: absolute; right: 5px; background: none; border: none; font-size: 20px; cursor: pointer; color: #1a73e8; }
+        .magic-btn { background: linear-gradient(45deg, #ff6b6b, #c0392b); width: 100%; color: white; padding: 14px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; }
+        .save-btn { width: 100%; background-color: #1a73e8; color: white; border: none; padding: 12px; border-radius: 8px; margin-top: 12px; cursor: pointer; }
+        .json-btn { background-color: #34a853; }
+        .mic-active { border: 2px solid #34a853 !important; background-color: #e6f4ea !important; }
+        .status-bar { text-align: center; color: #1e8e3e; font-weight: bold; font-size: 12px; }
+    </style>
+</head>
+<body>
 
-// --- अपडेटेड listenAndFill फंक्शन ---
-window.listenAndFill = function(fieldType, inputElement) {
-    return new Promise((resolve, reject) => {
-        let SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            alert("Voice typing is not supported.");
-            reject("Not supported");
-            return;
+    <h2>Cloud Transport App</h2>
+    <div id="connectionStatus" class="status-bar">Connecting...</div>
+
+    <button class="magic-btn" onclick="startMagicFlow()">🎤 Magic Button: Direct Voice Fill</button>
+
+    <div class="card">
+        <h3>Search Village</h3>
+        <input type="text" id="searchInput" placeholder="Type village name..." onkeyup="searchVillage()">
+        <div id="searchResults"></div>
+    </div>
+
+    <div class="card">
+        <h3 id="formTitle">Direct Voice / Manual Entry</h3>
+        <div class="input-group"><input type="text" id="transportName" placeholder="Transport Name"><button class="box-mic-btn" onclick="startRealVoice('name', document.getElementById('transportName'))">🎤</button></div>
+        <div class="input-group"><input type="text" id="transportNumbers" placeholder="Mobile Numbers"><button class="box-mic-btn" onclick="startRealVoice('numbers', document.getElementById('transportNumbers'))">🎤</button></div>
+        <div class="input-group"><input type="text" id="villageNames" placeholder="Village Names"><button class="box-mic-btn" onclick="startRealVoice('villages', document.getElementById('villageNames'))">🎤</button></div>
+        <button class="save-btn" onclick="addTransport()">Save Data</button>
+        <button class="save-btn json-btn" onclick="exportJSON()">💾 Download JSON</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, push, onValue, remove, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const db = getDatabase(initializeApp({ databaseURL: "https://transport-fe3d9-default-rtdb.asia-southeast1.firebasedatabase.app/" }));
+        let transportData = {};
+        onValue(ref(db, 'transports'), (snapshot) => { transportData = snapshot.val() || {}; document.getElementById("connectionStatus").innerText = "Connected!"; });
+
+        window.exportJSON = function() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(transportData, null, 2));
+            const dl = document.createElement('a'); dl.setAttribute("href", dataStr); dl.setAttribute("download", "data.json"); dl.click();
         }
 
-        let recognition = new SpeechRecognition();
-        recognition.lang = 'en-IN'; 
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
+        window.startRealVoice = function(fieldType, inputElement) {
+            let SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            let recognition = new SpeechRecognition();
+            recognition.lang = 'en-IN';
+            let existingText = inputElement.value;
+            
+            inputElement.classList.add('mic-active');
+            recognition.start();
 
-        // पहले से मौजूद टेक्स्ट को सहेजें (Append logic)
-        let existingText = inputElement.value;
-        
-        inputElement.placeholder = "🎤 Listening...";
-        inputElement.classList.add('mic-active');
+            recognition.onresult = (event) => {
+                let spoken = event.results[0][0].transcript;
+                inputElement.value = existingText + (existingText ? ", " : "") + spoken;
+            };
+            recognition.onend = () => inputElement.classList.remove('mic-active');
+        }
 
-        recognition.start();
-
-        recognition.onresult = function(event) {
-            let spokenText = event.results[0][0].transcript;
-            // पुरानी वैल्यू के आगे नई वैल्यू जोड़ें
-            let combinedText = existingText + (existingText ? ", " : "") + spokenText;
-            inputElement.value = processInputData(combinedText, fieldType);
-            resolve(true);
-        };
-
-        recognition.onend = function() {
-            inputElement.classList.remove('mic-active');
-        };
-    });
-}
+        // अन्य पुराने फंक्शन्स (addTransport, searchVillage आदि) यहाँ वैसे ही रहने दें...
+        // नोट: addTransport और अन्य फंक्शन आपके पुराने कोड के अनुसार यहाँ जोड़ें।
+    </script>
+</body>
+</html>
