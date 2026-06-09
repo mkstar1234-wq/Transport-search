@@ -133,6 +133,15 @@
         .delete-btn { background: var(--red); color: #fff; }
         .empty-msg { color: var(--red); font-size: 13px; font-weight: 600; padding: 6px 0; }
 
+        .download-btn {
+            width: 100%; padding: 13px; border: none; border-radius: 10px;
+            font-size: 14px; font-weight: 700; color: #fff; cursor: pointer;
+            background: linear-gradient(135deg, #1e8e3e, #137333);
+            box-shadow: 0 4px 14px rgba(30,142,62,.25);
+            transition: opacity .15s;
+        }
+        .download-btn:active { opacity: .85; }
+
         /* ── Toast Notification ── */
         #toast {
             position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
@@ -163,12 +172,15 @@
 
     <!-- Search -->
     <div class="card">
-        <div class="card-title">🔍 Village Search</div>
+        <div class="card-title">🔍 Search — Village या Transport Name</div>
         <div class="input-wrap">
-            <input type="text" id="searchInput" placeholder="गाँव का नाम लिखें...">
+            <input type="text" id="searchInput" placeholder="गाँव या transport का नाम लिखें...">
         </div>
         <div id="searchResults"></div>
     </div>
+
+    <!-- JSON Download -->
+    <button class="download-btn" onclick="downloadJSON()">⬇️ Firebase Data Download करें (JSON)</button>
 
     <!-- Entry Form -->
     <div class="card">
@@ -407,35 +419,58 @@
         });
 
         window.searchVillage = function (query = "") {
-            const q = query.toLowerCase();
+            const q = query.toLowerCase().trim();
             const resultsDiv = document.getElementById("searchResults");
             resultsDiv.innerHTML = "";
             if (!q) return;
 
-            const regex   = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), "gi");
-            const matches = Object.entries(transportData)
-                .filter(([, t]) => t.villages?.some(v => v.includes(q)));
+            const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex   = new RegExp(escaped, "gi");
+
+            // ✅ Village name AND transport name दोनों में search
+            const matches = Object.entries(transportData).filter(([, t]) => {
+                const nameMatch    = t.name?.toLowerCase().includes(q);
+                const villageMatch = t.villages?.some(v => v.toLowerCase().includes(q));
+                return nameMatch || villageMatch;
+            });
 
             if (!matches.length) {
-                resultsDiv.innerHTML = `<div class="empty-msg">इस गाँव का कोई transport नहीं मिला।</div>`;
+                resultsDiv.innerHTML = `<div class="empty-msg">कोई result नहीं मिला।</div>`;
                 return;
             }
 
             matches.forEach(([key, t]) => {
-                const villageStr       = t.villages.join(", ");
-                const highlightedVill  = villageStr.replace(regex, m => `<span class="highlight">${m}</span>`);
+                const villageStr      = (t.villages ?? []).join(", ");
+                const highlightedVill = villageStr.replace(regex, m => `<span class="highlight">${m}</span>`);
+                const highlightedName = (t.name ?? "").replace(regex, m => `<span class="highlight">${m}</span>`);
                 const el = document.createElement("div");
                 el.className = "result-item";
                 el.innerHTML = `
-                    <div class="result-name">${t.name}</div>
+                    <div class="result-name">${highlightedName}</div>
                     <div class="result-meta">📞 ${t.numbers || 'N/A'}</div>
-                    <div class="result-villages">🏘️ ${highlightedVill}</div>
+                    <div class="result-villages">🏘️ ${highlightedVill || '—'}</div>
                     <div class="result-actions">
                         <button class="edit-btn"   onclick="editEntry('${key}')">✏️ Edit</button>
                         <button class="delete-btn" onclick="deleteEntry('${key}')">🗑️ Delete</button>
                     </div>`;
                 resultsDiv.appendChild(el);
             });
+        };
+
+        /* ── JSON Download ── */
+        window.downloadJSON = function () {
+            if (!Object.keys(transportData).length) {
+                showToast("⚠️ Download करने के लिए कोई data नहीं है!", "warning");
+                return;
+            }
+            const blob = new Blob([JSON.stringify(transportData, null, 2)], { type: "application/json" });
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement("a");
+            a.href     = url;
+            a.download = `transport-backup-${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast("✅ JSON Download हो गया!", "success");
         };
     </script>
 </body>
