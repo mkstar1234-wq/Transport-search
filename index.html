@@ -1,64 +1,51 @@
-// ====== EXTRA FEATURES PACK ======
+// Auto Dashboard
+setInterval(() => {
 
-window.toggleDarkMode = function () {
-    document.body.classList.toggle("dark-mode");
+    try {
 
-    if (document.body.classList.contains("dark-mode")) {
-        localStorage.setItem("theme", "dark");
-    } else {
-        localStorage.setItem("theme", "light");
-    }
-};
+        let totalTransport =
+            Object.keys(transportData).length;
 
-// Theme Restore
-window.addEventListener("load", () => {
-    if (localStorage.getItem("theme") === "dark") {
-        document.body.classList.add("dark-mode");
-    }
-});
+        let villageSet = new Set();
 
-// Dashboard Counter
-function updateDashboard() {
+        Object.values(transportData).forEach(item => {
 
-    let totalTransport =
-        Object.keys(transportData).length;
+            if (item.villages) {
 
-    let transportBox =
-        document.getElementById("totalTransport");
+                item.villages.forEach(v => {
+                    villageSet.add(v);
+                });
 
-    if (transportBox)
-        transportBox.innerText = totalTransport;
+            }
 
-    let villageSet = new Set();
+        });
 
-    Object.values(transportData).forEach(item => {
+        let status =
+            document.getElementById("connectionStatus");
 
-        if (item.villages) {
+        status.innerHTML =
+            "✅ Connected | Transports: " +
+            totalTransport +
+            " | Villages: " +
+            villageSet.size;
 
-            item.villages.forEach(v => {
-                villageSet.add(v);
-            });
+    } catch (e) {}
 
-        }
+}, 1000);
 
-    });
 
-    let villageBox =
-        document.getElementById("totalVillage");
-
-    if (villageBox)
-        villageBox.innerText = villageSet.size;
-}
-
-// Backup JSON
+// JSON Backup
 window.backupData = function () {
 
-    const blob = new Blob(
+    let blob = new Blob(
         [JSON.stringify(transportData, null, 2)],
-        { type: "application/json" }
+        {
+            type: "application/json"
+        }
     );
 
-    const a = document.createElement("a");
+    let a =
+        document.createElement("a");
 
     a.href =
         URL.createObjectURL(blob);
@@ -67,65 +54,77 @@ window.backupData = function () {
         "transport-backup.json";
 
     a.click();
+
 };
 
+
 // Voice Search
-window.startVoiceSearch = function () {
+window.voiceSearch = function () {
 
     let SpeechRecognition =
         window.SpeechRecognition ||
         window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-        alert("Voice Search not supported");
+
+        alert(
+            "Voice Search Not Supported"
+        );
+
         return;
     }
 
     let recognition =
         new SpeechRecognition();
 
-    recognition.lang = "en-IN";
+    recognition.lang =
+        "en-IN";
 
     recognition.start();
 
-    recognition.onresult = function (event) {
+    recognition.onresult =
+        function(event) {
 
         let text =
-            event.results[0][0].transcript;
+            event.results[0][0]
+            .transcript;
 
-        document.getElementById(
-            "searchInput"
-        ).value = text;
+        document
+            .getElementById(
+                "searchInput"
+            )
+            .value = text;
 
         searchVillage();
+
     };
+
 };
 
-// Export CSV
+
+// CSV Export
 window.exportCSV = function () {
 
-    let rows =
-        [["Name", "Numbers", "Villages"]];
-
-    Object.values(transportData)
-        .forEach(item => {
-
-            rows.push([
-                item.name || "",
-                item.numbers || "",
-                (item.villages || []).join("|")
-            ]);
-
-        });
-
     let csv =
-        rows.map(e => e.join(","))
-            .join("\n");
+        "Name,Numbers,Villages\n";
+
+    Object.values(
+        transportData
+    ).forEach(item => {
+
+        csv +=
+            `"${item.name}","${item.numbers}","${(item.villages || []).join("|")}"\n`;
+
+    });
 
     let blob =
-        new Blob([csv], {
-            type: "text/csv"
-        });
+        new Blob(
+            [csv],
+            {
+                type:
+                "text/csv"
+            }
+        );
 
     let a =
         document.createElement("a");
@@ -137,18 +136,5 @@ window.exportCSV = function () {
         "transport-data.csv";
 
     a.click();
+
 };
-
-// Firebase Dashboard Auto Refresh
-const oldOnValueHandler =
-    window.searchVillage;
-
-setInterval(() => {
-
-    try {
-        updateDashboard();
-    } catch (e) {}
-
-}, 1000);
-
-// ====== END FEATURES PACK ======
