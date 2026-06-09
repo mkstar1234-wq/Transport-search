@@ -1,109 +1,104 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Live Cloud Transport Manager</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Transport App</title>
     <style>
-        html, body { margin: 0; padding: 0; height: 100vh; overflow: hidden; font-family: sans-serif; background: #f5f7fa; }
-        body { display: flex; flex-direction: column; padding: 12px; max-width: 450px; margin: auto; }
-        .header-container { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 5px 0; }
-        h2 { color: #1a73e8; margin: 0; font-size: 20px; }
-        .download-btn { background: #34a853; color: white; border: none; border-radius: 50%; width: 35px; height: 35px; cursor: pointer; }
-        .card { background: white; padding: 14px; margin-bottom: 10px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .input-group { position: relative; display: flex; align-items: center; margin-top: 8px; }
-        .input-group input { width: 100%; padding: 12px 40px 12px 12px; border: 1px solid #ccc; border-radius: 8px; }
-        .box-mic-btn { position: absolute; right: 5px; background: none; border: none; font-size: 20px; cursor: pointer; }
-        .save-btn { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; background-color: #1a73e8; color: white; border: none; padding: 16px; border-radius: 30px; font-weight: bold; }
-        #searchResults { max-height: 200px; overflow-y: auto; margin-top: 10px; }
-        .result-item { background: #e8f0fe; margin-bottom: 8px; padding: 10px; border-radius: 6px; font-size: 14px; border-left: 4px solid #1a73e8; }
-        .status-bar { text-align: center; font-size: 12px; color: green; }
+        body { font-family: sans-serif; padding: 15px; max-width: 450px; margin: auto; background: #f0f2f5; }
+        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .label { font-weight: bold; font-size: 12px; color: #555; margin-bottom: 5px; display: block; }
+        .input-group { position: relative; margin-bottom: 15px; }
+        input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+        .mic-btn { position: absolute; right: 5px; top: 5px; background: #eee; border: none; padding: 8px 12px; cursor: pointer; border-radius: 5px; color: #1a73e8; }
+        .magic-btn { background: linear-gradient(45deg, #ff6b6b, #c0392b); color: white; padding: 15px; width: 100%; border: none; border-radius: 30px; margin-bottom: 15px; font-weight: bold; cursor: pointer; }
+        .save-btn { width: 100%; padding: 15px; background: #1a73e8; color: white; border: none; border-radius: 8px; margin-top: 20px; font-weight: bold; cursor: pointer; }
+        .result-item { background: #e8f0fe; padding: 10px; margin-top: 10px; border-radius: 8px; border-left: 4px solid #1a73e8; font-size: 14px; }
+        .action-btn { background: #ddd; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-right: 5px; }
     </style>
 </head>
 <body>
 
-    <div class="header-container">
-        <h2>Cloud Transport App</h2>
-        <button class="download-btn" onclick="downloadData()">↓</button>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2>Transport Manager</h2>
+        <button onclick="downloadJSON()" style="width:40px; height:40px; border-radius:50%; border:none; background:#28a745; color:white;">↓</button>
     </div>
-    <div id="connectionStatus" class="status-bar">Connecting...</div>
+
+    <button class="magic-btn" onclick="startMagicFlow()">Magic Button: Voice Fill</button>
 
     <div class="card">
-        <h3>Search Village</h3>
-        <input type="text" id="searchInput" placeholder="Type village name..." onkeyup="searchVillage()">
+        <label class="label">SEARCH (Name or Village)</label>
+        <input type="text" id="searchInput" placeholder="Search..." oninput="searchData()">
         <div id="searchResults"></div>
     </div>
 
     <div class="card">
-        <div class="input-group">
-            <input type="text" id="transportName" placeholder="Transport Name">
-            <button class="box-mic-btn" onclick="startRealVoice('transportName')">🎤</button>
-        </div>
-        <div class="input-group">
-            <input type="text" id="transportNumbers" placeholder="Mobile Numbers">
-            <button class="box-mic-btn" onclick="startRealVoice('transportNumbers')">🎤</button>
-        </div>
-        <div class="input-group">
-            <input type="text" id="villageNames" placeholder="Village Names">
-            <button class="box-mic-btn" onclick="startRealVoice('villageNames')">🎤</button>
-        </div>
+        <label class="label">TRANSPORT NAME</label>
+        <div class="input-group"><input type="text" id="transportName"><button class="mic-btn" onclick="startVoice('transportName')">🎤</button></div>
+        
+        <label class="label">MOBILE NUMBERS</label>
+        <div class="input-group"><input type="text" id="transportNumbers"><button class="mic-btn" onclick="startVoice('transportNumbers')">🎤</button></div>
+        
+        <label class="label">VILLAGE NAMES</label>
+        <div class="input-group"><input type="text" id="villageNames"><button class="mic-btn" onclick="startVoice('villageNames')">🎤</button></div>
+        
+        <button class="save-btn" onclick="addTransport()">Save Data</button>
     </div>
-    
-    <button class="save-btn" onclick="addTransport()">Save Data</button>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, onValue, push, remove, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        
+        const db = getDatabase(initializeApp({databaseURL: "https://transport-fe3d9-default-rtdb.asia-southeast1.firebasedatabase.app/"}));
+        let transportData = {}, currentEditKey = null;
 
-        const db = getDatabase(initializeApp({ databaseURL: "https://transport-fe3d9-default-rtdb.asia-southeast1.firebasedatabase.app/" }));
-        let transportData = {};
+        onValue(ref(db, 'transports'), (snapshot) => { transportData = snapshot.val() || {}; });
 
-        onValue(ref(db, 'transports'), (snapshot) => {
-            transportData = snapshot.val() || {};
-            document.getElementById("connectionStatus").innerText = "Connected!";
-        });
-
-        window.downloadData = () => {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(transportData));
-            const a = document.createElement('a'); a.href = dataStr; a.download = "transports.json"; a.click();
-        }
-
-        window.startRealVoice = (id) => {
-            const input = document.getElementById(id);
-            let rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-            rec.lang = 'en-IN';
-            const timer = setTimeout(() => rec.stop(), 7000);
-            rec.onresult = (e) => {
-                clearTimeout(timer);
-                input.value = (input.value ? input.value + ", " : "") + e.results[0][0].transcript;
-            };
-            rec.start();
+        window.searchData = () => {
+            const query = document.getElementById("searchInput").value.toLowerCase();
+            const resDiv = document.getElementById("searchResults");
+            resDiv.innerHTML = "";
+            if (!query) return;
+            Object.entries(transportData).forEach(([key, t]) => {
+                const name = (t.name || "").toLowerCase();
+                const village = (t.villages || "").toLowerCase();
+                if (name.includes(query) || village.includes(query)) {
+                    resDiv.innerHTML += `<div class="result-item"><strong>${t.name}</strong><br>No: ${t.numbers}<br>Village: ${t.villages}<br><button class="action-btn" onclick="edit('${key}')">Edit</button><button class="action-btn" onclick="del('${key}')">Delete</button></div>`;
+                }
+            });
         };
 
+        window.startVoice = (id) => new Promise((resolve) => {
+            const input = document.getElementById(id);
+            let rec = new (window.webkitSpeechRecognition || window.SpeechRecognition)();
+            rec.lang = 'en-US'; 
+            rec.continuous = true;
+            let existing = input.value;
+            let timer = setTimeout(() => rec.stop(), 7000);
+            
+            rec.onresult = (e) => {
+                clearTimeout(timer);
+                let transcript = e.results[e.results.length-1][0].transcript.trim();
+                let combined = existing ? (existing + ", " + transcript) : transcript;
+                if(id === 'transportNumbers') input.value = combined.replace(/\D/g, '').match(/.{1,10}/g)?.join(', ') || combined.replace(/\D/g, '');
+                else input.value = combined.replace(/[\s,]+/g, ', ');
+                timer = setTimeout(() => rec.stop(), 7000);
+            };
+            rec.onend = () => { clearTimeout(timer); resolve(); };
+            rec.start();
+        });
+
         window.addTransport = () => {
-            push(ref(db, 'transports'), {
-                name: document.getElementById("transportName").value,
-                numbers: document.getElementById("transportNumbers").value,
-                villages: document.getElementById("villageNames").value.split(",").map(v => v.trim())
-            });
+            const data = { name: document.getElementById("transportName").value, numbers: document.getElementById("transportNumbers").value, villages: document.getElementById("villageNames").value };
+            if(currentEditKey) set(ref(db, 'transports/'+currentEditKey), data); else push(ref(db, 'transports'), data);
             alert("Saved!"); location.reload();
         };
 
-        window.searchVillage = () => {
-            let val = document.getElementById("searchInput").value.toLowerCase();
-            let res = document.getElementById("searchResults");
-            res.innerHTML = "";
-            for (let key in transportData) {
-                let item = transportData[key];
-                if (item.villages.some(v => v.toLowerCase().includes(val))) {
-                    res.innerHTML += `<div class="result-item">
-                        <strong>${item.name}</strong><br>
-                        Mob: ${item.numbers || 'N/A'}<br>
-                        Villages: ${item.villages.join(", ")}
-                    </div>`;
-                }
-            }
-        };
+        window.edit = (k) => { currentEditKey = k; const t = transportData[k]; document.getElementById("transportName").value = t.name; document.getElementById("transportNumbers").value = t.numbers; document.getElementById("villageNames").value = t.villages; };
+        window.del = (k) => { if(confirm("Delete?")) remove(ref(db, 'transports/'+k)); };
+        window.downloadJSON = () => { const a = document.createElement('a'); a.href = "data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(transportData)); a.download="data.json"; a.click(); };
+        window.startMagicFlow = async () => { await startVoice('transportName'); await startVoice('transportNumbers'); await startVoice('villageNames'); };
     </script>
 </body>
 </html>
