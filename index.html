@@ -1,108 +1,154 @@
-<div class="action-container">
-    <a href="tel:${t.numbers}">
-        <button class="edit-btn">📞 Call</button>
-    </a>
+// ====== EXTRA FEATURES PACK ======
 
-    <a href="https://wa.me/91${t.numbers}" target="_blank">
-        <button class="edit-btn">💬 WhatsApp</button>
-    </a>
+window.toggleDarkMode = function () {
+    document.body.classList.toggle("dark-mode");
 
-    <button class="edit-btn" onclick="editEntry('${key}')">✏️ Edit</button>
+    if (document.body.classList.contains("dark-mode")) {
+        localStorage.setItem("theme", "dark");
+    } else {
+        localStorage.setItem("theme", "light");
+    }
+};
 
-    <button class="delete-btn" onclick="deleteEntry('${key}')">🗑️ Delete</button>
-</div>
-<button onclick="toggleDarkMode()" class="save-btn">
-🌙 Dark Mode
-</button>
-window.toggleDarkMode = function(){
-
- document.body.classList.toggle("dark-mode");
-
- if(document.body.classList.contains("dark-mode")){
-   localStorage.setItem("theme","dark");
- }else{
-   localStorage.setItem("theme","light");
- }
-
-}
-.dark-mode{
- background:#111 !important;
- color:white !important;
-}
-
-.dark-mode .card{
- background:#222 !important;
- color:white !important;
-}
-
-.dark-mode input{
- background:#333;
- color:white;
- border:1px solid #555;
-}
-<div class="card">
-   <h3>Dashboard</h3>
-
-   Total Transport :
-   <span id="totalTransport">0</span>
-
-   <br><br>
-
-   Total Villages :
-   <span id="totalVillage">0</span>
-</div>
-let totalTransport =
-Object.keys(transportData).length;
-
-document.getElementById(
-"totalTransport"
-).innerText = totalTransport;
-
-let villageSet = new Set();
-
-Object.values(transportData).forEach(item=>{
-
- if(item.villages){
-
-  item.villages.forEach(v=>{
-   villageSet.add(v);
-  });
-
- }
-
+// Theme Restore
+window.addEventListener("load", () => {
+    if (localStorage.getItem("theme") === "dark") {
+        document.body.classList.add("dark-mode");
+    }
 });
 
-document.getElementById(
-"totalVillage"
-).innerText = villageSet.size;
-<button class="save-btn"
-onclick="backupData()">
-💾 Backup JSON
-</button>
-window.backupData = function(){
+// Dashboard Counter
+function updateDashboard() {
 
- const blob = new Blob(
-  [
-   JSON.stringify(
-    transportData,
-    null,
-    2
-   )
-  ],
-  {
-   type:"application/json"
-  }
- );
+    let totalTransport =
+        Object.keys(transportData).length;
 
- const a =
- document.createElement("a");
+    let transportBox =
+        document.getElementById("totalTransport");
 
- a.href =
- URL.createObjectURL(blob);
+    if (transportBox)
+        transportBox.innerText = totalTransport;
 
- a.download =
- "transport-backup.json";
+    let villageSet = new Set();
 
- a.click();
+    Object.values(transportData).forEach(item => {
 
+        if (item.villages) {
+
+            item.villages.forEach(v => {
+                villageSet.add(v);
+            });
+
+        }
+
+    });
+
+    let villageBox =
+        document.getElementById("totalVillage");
+
+    if (villageBox)
+        villageBox.innerText = villageSet.size;
 }
+
+// Backup JSON
+window.backupData = function () {
+
+    const blob = new Blob(
+        [JSON.stringify(transportData, null, 2)],
+        { type: "application/json" }
+    );
+
+    const a = document.createElement("a");
+
+    a.href =
+        URL.createObjectURL(blob);
+
+    a.download =
+        "transport-backup.json";
+
+    a.click();
+};
+
+// Voice Search
+window.startVoiceSearch = function () {
+
+    let SpeechRecognition =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+        alert("Voice Search not supported");
+        return;
+    }
+
+    let recognition =
+        new SpeechRecognition();
+
+    recognition.lang = "en-IN";
+
+    recognition.start();
+
+    recognition.onresult = function (event) {
+
+        let text =
+            event.results[0][0].transcript;
+
+        document.getElementById(
+            "searchInput"
+        ).value = text;
+
+        searchVillage();
+    };
+};
+
+// Export CSV
+window.exportCSV = function () {
+
+    let rows =
+        [["Name", "Numbers", "Villages"]];
+
+    Object.values(transportData)
+        .forEach(item => {
+
+            rows.push([
+                item.name || "",
+                item.numbers || "",
+                (item.villages || []).join("|")
+            ]);
+
+        });
+
+    let csv =
+        rows.map(e => e.join(","))
+            .join("\n");
+
+    let blob =
+        new Blob([csv], {
+            type: "text/csv"
+        });
+
+    let a =
+        document.createElement("a");
+
+    a.href =
+        URL.createObjectURL(blob);
+
+    a.download =
+        "transport-data.csv";
+
+    a.click();
+};
+
+// Firebase Dashboard Auto Refresh
+const oldOnValueHandler =
+    window.searchVillage;
+
+setInterval(() => {
+
+    try {
+        updateDashboard();
+    } catch (e) {}
+
+}, 1000);
+
+// ====== END FEATURES PACK ======
