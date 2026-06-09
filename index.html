@@ -3,55 +3,55 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Transport App</title>
+    <title>Transport Manager</title>
     <style>
         body { font-family: sans-serif; padding: 15px; max-width: 450px; margin: auto; background: #f0f2f5; }
-        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .label { font-weight: bold; font-size: 12px; color: #555; margin-bottom: 5px; display: block; }
-        .input-group { position: relative; margin-bottom: 15px; }
-        input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
-        .mic-btn { position: absolute; right: 5px; top: 5px; background: #eee; border: none; padding: 8px 12px; cursor: pointer; border-radius: 5px; color: #1a73e8; }
-        .magic-btn { background: linear-gradient(45deg, #ff6b6b, #c0392b); color: white; padding: 15px; width: 100%; border: none; border-radius: 30px; margin-bottom: 15px; font-weight: bold; cursor: pointer; }
-        .save-btn { width: 100%; padding: 15px; background: #1a73e8; color: white; border: none; border-radius: 8px; margin-top: 20px; font-weight: bold; cursor: pointer; }
-        .result-item { background: #e8f0fe; padding: 10px; margin-top: 10px; border-radius: 8px; border-left: 4px solid #1a73e8; font-size: 14px; }
-        .action-btn { background: #ddd; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-right: 5px; }
+        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; }
+        input { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+        .mic-btn { position: absolute; right: 25px; cursor: pointer; border: none; background: none; font-size: 20px; }
+        .magic-btn { background: #d32f2f; color: white; padding: 15px; width: 100%; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; }
+        .result-item { background: #e8f0fe; padding: 10px; margin-top: 5px; border-radius: 8px; border-left: 4px solid #1a73e8; }
     </style>
 </head>
 <body>
 
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h2>Transport Manager</h2>
-        <button onclick="downloadJSON()" style="width:40px; height:40px; border-radius:50%; border:none; background:#28a745; color:white;">↓</button>
-    </div>
-
+    <h2>Transport Manager</h2>
     <button class="magic-btn" onclick="startMagicFlow()">Magic Button: Voice Fill</button>
 
     <div class="card">
-        <label class="label">SEARCH (Name or Village)</label>
-        <input type="text" id="searchInput" placeholder="Search..." oninput="searchData()">
+        <label>SEARCH (Live)</label>
+        <input type="text" id="searchInput" placeholder="Type to search..." oninput="searchData()">
         <div id="searchResults"></div>
     </div>
 
     <div class="card">
-        <label class="label">TRANSPORT NAME</label>
-        <div class="input-group"><input type="text" id="transportName"><button class="mic-btn" onclick="startVoice('transportName')">🎤</button></div>
+        <label>TRANSPORT NAME</label>
+        <div style="display:flex; align-items:center;">
+            <input type="text" id="transportName">
+            <button class="mic-btn" onclick="startVoice('transportName', false)">🎤</button>
+        </div>
         
-        <label class="label">MOBILE NUMBERS</label>
-        <div class="input-group"><input type="text" id="transportNumbers"><button class="mic-btn" onclick="startVoice('transportNumbers')">🎤</button></div>
+        <label>MOBILE NUMBERS</label>
+        <div style="display:flex; align-items:center;">
+            <input type="text" id="transportNumbers">
+            <button class="mic-btn" onclick="startVoice('transportNumbers', true)">🎤</button>
+        </div>
         
-        <label class="label">VILLAGE NAMES</label>
-        <div class="input-group"><input type="text" id="villageNames"><button class="mic-btn" onclick="startVoice('villageNames')">🎤</button></div>
+        <label>VILLAGE NAMES</label>
+        <div style="display:flex; align-items:center;">
+            <input type="text" id="villageNames">
+            <button class="mic-btn" onclick="startVoice('villageNames', true)">🎤</button>
+        </div>
         
-        <button class="save-btn" onclick="addTransport()">Save Data</button>
+        <button onclick="addTransport()" style="width:100%; padding:15px; margin-top:20px; background:#1a73e8; color:white; border:none; border-radius:8px;">Save Data</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, onValue, push, remove, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, onValue, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
         
         const db = getDatabase(initializeApp({databaseURL: "https://transport-fe3d9-default-rtdb.asia-southeast1.firebasedatabase.app/"}));
-        let transportData = {}, currentEditKey = null;
+        let transportData = {};
 
         onValue(ref(db, 'transports'), (snapshot) => { transportData = snapshot.val() || {}; });
 
@@ -60,45 +60,39 @@
             const resDiv = document.getElementById("searchResults");
             resDiv.innerHTML = "";
             if (!query) return;
-            Object.entries(transportData).forEach(([key, t]) => {
+
+            Object.values(transportData).forEach(t => {
                 const name = (t.name || "").toLowerCase();
                 const village = (t.villages || "").toLowerCase();
                 if (name.includes(query) || village.includes(query)) {
-                    resDiv.innerHTML += `<div class="result-item"><strong>${t.name}</strong><br>No: ${t.numbers}<br>Village: ${t.villages}<br><button class="action-btn" onclick="edit('${key}')">Edit</button><button class="action-btn" onclick="del('${key}')">Delete</button></div>`;
+                    resDiv.innerHTML += `<div class="result-item"><strong>${t.name}</strong><br>No: ${t.numbers}<br>Village: ${t.villages}</div>`;
                 }
             });
         };
 
-        window.startVoice = (id) => new Promise((resolve) => {
-            const input = document.getElementById(id);
-            let rec = new (window.webkitSpeechRecognition || window.SpeechRecognition)();
-            rec.lang = 'en-US'; 
-            rec.continuous = true;
-            let existing = input.value;
-            let timer = setTimeout(() => rec.stop(), 7000);
-            
+        window.startVoice = (id, allowComma) => {
+            const rec = new (window.webkitSpeechRecognition || window.SpeechRecognition)();
+            rec.lang = 'en-US';
             rec.onresult = (e) => {
-                clearTimeout(timer);
-                let transcript = e.results[e.results.length-1][0].transcript.trim();
-                let combined = existing ? (existing + ", " + transcript) : transcript;
-                if(id === 'transportNumbers') input.value = combined.replace(/\D/g, '').match(/.{1,10}/g)?.join(', ') || combined.replace(/\D/g, '');
-                else input.value = combined.replace(/[\s,]+/g, ', ');
-                timer = setTimeout(() => rec.stop(), 7000);
+                const transcript = e.results[0][0].transcript;
+                const input = document.getElementById(id);
+                // अगर allowComma true है, तो पुराने डेटा के साथ जोड़ें, वरना सिर्फ नया टेक्स्ट रखें
+                if (allowComma) {
+                    input.value = input.value ? input.value + ", " + transcript : transcript;
+                } else {
+                    input.value = transcript;
+                }
             };
-            rec.onend = () => { clearTimeout(timer); resolve(); };
             rec.start();
-        });
-
-        window.addTransport = () => {
-            const data = { name: document.getElementById("transportName").value, numbers: document.getElementById("transportNumbers").value, villages: document.getElementById("villageNames").value };
-            if(currentEditKey) set(ref(db, 'transports/'+currentEditKey), data); else push(ref(db, 'transports'), data);
-            alert("Saved!"); location.reload();
         };
 
-        window.edit = (k) => { currentEditKey = k; const t = transportData[k]; document.getElementById("transportName").value = t.name; document.getElementById("transportNumbers").value = t.numbers; document.getElementById("villageNames").value = t.villages; };
-        window.del = (k) => { if(confirm("Delete?")) remove(ref(db, 'transports/'+k)); };
-        window.downloadJSON = () => { const a = document.createElement('a'); a.href = "data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(transportData)); a.download="data.json"; a.click(); };
-        window.startMagicFlow = async () => { await startVoice('transportName'); await startVoice('transportNumbers'); await startVoice('villageNames'); };
+        window.addTransport = () => {
+            push(ref(db, 'transports'), {
+                name: document.getElementById("transportName").value,
+                numbers: document.getElementById("transportNumbers").value,
+                villages: document.getElementById("villageNames").value
+            }).then(() => { alert("Saved!"); location.reload(); });
+        };
     </script>
 </body>
 </html>
