@@ -3,112 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Transport App</title>
+    <title>Transport Manager</title>
     <style>
         body { font-family: sans-serif; padding: 15px; max-width: 450px; margin: auto; background: #f0f2f5; }
-        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .label { font-weight: bold; font-size: 11px; color: #555; margin-top: 10px; display: block; }
-        .input-wrapper { position: relative; display: flex; align-items: center; margin-top: 5px; }
+        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; }
+        .input-wrapper { position: relative; margin-top: 5px; }
         input { width: 100%; padding: 12px 45px 12px 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
-        .mic-btn { position: absolute; right: 10px; background: none; border: none; cursor: pointer; font-size: 18px; }
-        .magic-btn { background: linear-gradient(45deg, #ff6b6b, #c0392b); color: white; padding: 15px; width: 100%; border: none; border-radius: 30px; margin-bottom: 15px; font-weight: bold; cursor: pointer; }
-        .save-btn { width: 100%; padding: 15px; background: #1a73e8; color: white; border: none; border-radius: 8px; margin-top: 20px; font-weight: bold; cursor: pointer; }
-        .result-item { background: #e8f0fe; padding: 12px; margin-top: 8px; border-radius: 8px; border-left: 4px solid #1a73e8; font-size: 14px; }
+        .mic-btn { position: absolute; right: 10px; top: 10px; border: none; background: none; cursor: pointer; font-size: 20px; }
+        .round-btn { width: 35px; height: 35px; border-radius: 50%; border: none; background: #28a745; color: white; cursor: pointer; font-size: 16px; margin-left: 10px; }
+        .btn { width: 100%; padding: 12px; margin-top: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .result-item { background: #fff; padding: 10px; margin-top: 8px; border-radius: 8px; border-left: 4px solid #1a73e8; }
     </style>
 </head>
 <body>
 
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h2>Transport App</h2>
-        <button onclick="downloadJSON()" style="width:40px; height:40px; border-radius:50%; border:none; background:#28a745; color:white;">↓</button>
+    <h2>Transport Manager</h2>
+    
+    <div class="card">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <label><strong>TRANSPORT NAME</strong></label>
+            <button class="round-btn" onclick="downloadJSON()">↓</button>
+        </div>
+        <div class="input-wrapper">
+            <input type="text" id="tName">
+            <button class="mic-btn" onclick="startVoice('tName', false)">🎤</button>
+        </div>
+        
+        <label>MOBILE NUMBERS</label>
+        <div class="input-wrapper">
+            <input type="text" id="tNumbers">
+            <button class="mic-btn" onclick="startVoice('tNumbers', true)">🎤</button>
+        </div>
+        
+        <label>VILLAGE NAMES</label>
+        <div class="input-wrapper">
+            <input type="text" id="tVillages">
+            <button class="mic-btn" onclick="startVoice('tVillages', true)">🎤</button>
+        </div>
+        
+        <button class="btn" style="background:#d32f2f; color:white;" onclick="magicVoice()">Magic Voice Fill</button>
+        <button class="btn" style="background:#1a73e8; color:white;" onclick="saveData()">Save Data</button>
     </div>
 
-    <button class="magic-btn" onclick="startMagicFlow()">Magic Button: Voice Fill</button>
-
     <div class="card">
-        <label class="label">SEARCH (Live)</label>
-        <input type="text" id="searchInput" placeholder="Search name or village..." oninput="searchData()">
+        <label><strong>SEARCH</strong></label>
+        <input type="text" id="searchInput" placeholder="Search..." oninput="searchData()">
         <div id="searchResults"></div>
-    </div>
-
-    <div class="card">
-        <label class="label">TRANSPORT NAME</label>
-        <div class="input-wrapper">
-            <input type="text" id="transportName">
-            <button class="mic-btn" onclick="startVoice('transportName', false)">🎤</button>
-        </div>
-        
-        <label class="label">MOBILE NUMBERS</label>
-        <div class="input-wrapper">
-            <input type="text" id="transportNumbers">
-            <button class="mic-btn" onclick="startVoice('transportNumbers', true)">🎤</button>
-        </div>
-        
-        <label class="label">VILLAGE NAMES</label>
-        <div class="input-wrapper">
-            <input type="text" id="villageNames">
-            <button class="mic-btn" onclick="startVoice('villageNames', true)">🎤</button>
-        </div>
-        
-        <button class="save-btn" onclick="addTransport()">Save Data</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, onValue, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-        
+        import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
         const db = getDatabase(initializeApp({databaseURL: "https://transport-fe3d9-default-rtdb.asia-southeast1.firebasedatabase.app/"}));
-        let transportData = {};
+        let allData = {};
 
-        onValue(ref(db, 'transports'), (snapshot) => { transportData = snapshot.val() || {}; });
-
-        window.searchData = () => {
-            const query = document.getElementById("searchInput").value.toLowerCase();
-            const resDiv = document.getElementById("searchResults");
-            resDiv.innerHTML = "";
-            if (!query) return;
-            Object.values(transportData).forEach(t => {
-                const name = (t.name || "").toLowerCase();
-                const village = (t.villages || "").toLowerCase();
-                if (name.includes(query) || village.includes(query)) {
-                    resDiv.innerHTML += `<div class="result-item"><strong>${t.name}</strong><br>No: ${t.numbers}<br>Village: ${t.villages}</div>`;
-                }
-            });
-        };
+        onValue(ref(db, 'transports'), (snap) => { allData = snap.val() || {}; });
 
         window.startVoice = (id, allowComma) => {
             const input = document.getElementById(id);
             let rec = new (window.webkitSpeechRecognition || window.SpeechRecognition)();
             rec.lang = 'en-US';
+            let timer = setTimeout(() => rec.stop(), 7000);
             rec.onresult = (e) => {
-                const transcript = e.results[0][0].transcript;
-                if (allowComma) {
-                    input.value = input.value ? input.value + ", " + transcript : transcript;
-                } else {
-                    input.value = transcript;
-                }
+                clearTimeout(timer);
+                let text = e.results[0][0].transcript;
+                if (allowComma) text += ", ";
+                input.value = input.value ? input.value + " " + text : text;
             };
             rec.start();
         };
 
-        window.addTransport = () => {
+        window.saveData = () => {
             push(ref(db, 'transports'), {
-                name: document.getElementById("transportName").value,
-                numbers: document.getElementById("transportNumbers").value,
-                villages: document.getElementById("villageNames").value
-            }).then(() => { alert("Saved!"); location.reload(); });
+                name: document.getElementById('tName').value,
+                numbers: document.getElementById('tNumbers').value,
+                villages: document.getElementById('tVillages').value
+            }).then(() => location.reload());
         };
+
+        window.searchData = () => {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const resDiv = document.getElementById('searchResults');
+            resDiv.innerHTML = "";
+            Object.keys(allData).forEach(key => {
+                const t = allData[key];
+                if ((t.name && t.name.toLowerCase().includes(q)) || (t.villages && t.villages.toLowerCase().includes(q))) {
+                    resDiv.innerHTML += `<div class="result-item"><strong>${t.name}</strong><br>${t.numbers}<br>${t.villages}
+                    <button onclick="deleteData('${key}')" style="margin-left:10px; color:red; border:none; background:none;">Delete</button></div>`;
+                }
+            });
+        };
+
+        window.deleteData = (key) => { remove(ref(db, 'transports/' + key)).then(() => searchData()); };
 
         window.downloadJSON = () => {
             const a = document.createElement('a');
-            a.href = "data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(transportData));
-            a.download="data.json"; a.click();
+            a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allData));
+            a.download = "data.json"; a.click();
         };
 
-        window.startMagicFlow = async () => {
-            await startVoice('transportName', false);
-            await startVoice('transportNumbers', true);
-            await startVoice('villageNames', true);
+        window.magicVoice = async () => {
+            await startVoice('tName', false);
+            setTimeout(() => startVoice('tNumbers', true), 8000);
+            setTimeout(() => startVoice('tVillages', true), 16000);
         };
     </script>
 </body>
