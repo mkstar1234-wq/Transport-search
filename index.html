@@ -2,56 +2,63 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Transport Manager Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Transport Manager</title>
     <style>
-        body { font-family: sans-serif; padding: 15px; max-width: 450px; margin: auto; background: #f0f2f5; }
-        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; }
-        .input-wrapper { position: relative; margin-top: 5px; }
-        input { width: 100%; padding: 12px 45px 12px 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
-        .mic-btn { position: absolute; right: 10px; top: 10px; border: none; background: none; cursor: pointer; font-size: 20px; }
-        .round-btn { width: 35px; height: 35px; border-radius: 50%; border: none; background: #28a745; color: white; cursor: pointer; font-size: 16px; margin-left: 10px; }
-        .btn { width: 100%; padding: 12px; margin-top: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .result-item { background: #fff; padding: 10px; margin-top: 8px; border-radius: 8px; border-left: 4px solid #1a73e8; }
+        /* यह CSS पूरे ऐप को मोबाइल में फिट रखेगा */
+        * { box-sizing: border-box; }
+        body { font-family: sans-serif; padding: 10px; margin: 0; background: #f0f2f5; width: 100%; }
+        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .input-group { margin-bottom: 15px; position: relative; }
+        label { font-size: 14px; font-weight: bold; color: #333; }
+        input { width: 100%; padding: 15px; margin-top: 5px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
+        .mic-btn { position: absolute; right: 10px; top: 35px; border: none; background: none; cursor: pointer; font-size: 24px; }
+        .round-btn { width: 40px; height: 40px; border-radius: 50%; border: none; background: #28a745; color: white; cursor: pointer; font-size: 18px; margin-left: 10px; }
+        .btn { width: 100%; padding: 15px; margin-top: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; }
+        .result-item { background: #e8f0fe; padding: 15px; margin-top: 10px; border-radius: 8px; border-left: 5px solid #1a73e8; font-size: 16px; }
+        button { touch-action: manipulation; }
     </style>
 </head>
 <body>
 
-    <h2>Transport Manager</h2>
+    <h2 style="text-align: center;">Transport Manager</h2>
+    
+    <button class="btn" style="background:#d32f2f; color:white; margin-bottom: 15px;" onclick="magicVoice()">Magic Voice Fill</button>
+
     <div class="card">
         <div style="display: flex; align-items: center; justify-content: space-between;">
-            <label><strong>TRANSPORT NAME</strong></label>
+            <label>TRANSPORT NAME</label>
             <button class="round-btn" onclick="downloadJSON()">↓</button>
         </div>
-        <div class="input-wrapper">
+        <div class="input-group">
             <input type="text" id="tName">
             <button class="mic-btn" onclick="startVoice('tName', false)">🎤</button>
         </div>
         
         <label>MOBILE NUMBERS</label>
-        <div class="input-wrapper">
+        <div class="input-group">
             <input type="text" id="tNumbers" oninput="formatNumber(this)">
             <button class="mic-btn" onclick="startVoice('tNumbers', true)">🎤</button>
         </div>
         
         <label>VILLAGE NAMES</label>
-        <div class="input-wrapper">
+        <div class="input-group">
             <input type="text" id="tVillages">
             <button class="mic-btn" onclick="startVoice('tVillages', true)">🎤</button>
         </div>
         
-        <button class="btn" style="background:#d32f2f; color:white;" onclick="magicVoice()">Magic Voice Fill</button>
         <button class="btn" style="background:#1a73e8; color:white;" onclick="saveData()">Save Data</button>
     </div>
 
     <div class="card">
-        <label><strong>SEARCH</strong></label>
+        <label>SEARCH</label>
         <input type="text" id="searchInput" placeholder="Search..." oninput="searchData()">
         <div id="searchResults"></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const db = getDatabase(initializeApp({databaseURL: "https://transport-fe3d9-default-rtdb.asia-southeast1.firebasedatabase.app/"}));
         let allData = {};
@@ -67,32 +74,28 @@
             }
         };
 
-        window.startVoice = (id, format) => {
-            return new Promise((resolve) => {
-                let rec = new (window.webkitSpeechRecognition || window.SpeechRecognition)();
-                rec.lang = 'en-US';
-                let timer = setTimeout(() => rec.stop(), 7000);
-                rec.onresult = (e) => {
-                    clearTimeout(timer);
-                    let text = e.results[0][0].transcript;
-                    const input = document.getElementById(id);
-                    if (format && id === 'tVillages') text += ", ";
-                    input.value = input.value ? input.value + " " + text : text;
-                    if (id === 'tNumbers') formatNumber(input);
-                    resolve();
-                };
-                rec.onend = () => resolve();
-                rec.start();
-            });
+        window.startVoice = (id, isVillage) => {
+            let rec = new (window.webkitSpeechRecognition || window.SpeechRecognition)();
+            rec.lang = 'en-US';
+            let timer = setTimeout(() => rec.stop(), 7000);
+            rec.onresult = (e) => {
+                clearTimeout(timer);
+                let text = e.results[0][0].transcript.trim();
+                const input = document.getElementById(id);
+                if (isVillage && input.value !== "") text = ", " + text;
+                input.value = input.value ? input.value + " " + text : text;
+                if(id === 'tNumbers') formatNumber(input);
+            };
+            rec.start();
         };
 
         window.magicVoice = async () => {
-            alert("Step 1: Transport Name");
-            await startVoice('tName', false);
-            alert("Step 2: Mobile Number");
-            await startVoice('tNumbers', true);
-            alert("Step 3: Village Name");
-            await startVoice('tVillages', true);
+            alert("Step 1: Speak Transport Name");
+            await new Promise(r => { startVoice('tName', false); setTimeout(r, 7500); });
+            alert("Step 2: Speak Mobile Number");
+            await new Promise(r => { startVoice('tNumbers', true); setTimeout(r, 7500); });
+            alert("Step 3: Speak Village Name");
+            await new Promise(r => { startVoice('tVillages', true); setTimeout(r, 7500); });
         };
 
         window.saveData = () => {
@@ -107,23 +110,24 @@
             const q = document.getElementById('searchInput').value.toLowerCase();
             const resDiv = document.getElementById('searchResults');
             resDiv.innerHTML = "";
+            if (q === "") return;
             Object.keys(allData).forEach(key => {
                 const t = allData[key];
-                if ((t.name || "").toLowerCase().includes(q) || (t.villages || "").toLowerCase().includes(q)) {
+                if ((t.name && t.name.toLowerCase().includes(q)) || (t.villages && t.villages.toLowerCase().includes(q))) {
                     resDiv.innerHTML += `<div class="result-item"><strong>${t.name}</strong><br>${t.numbers}<br>${t.villages}<br>
                     <button onclick="editData('${key}')">Edit</button> <button onclick="deleteData('${key}')">Delete</button></div>`;
                 }
             });
         };
 
-        window.deleteData = (key) => { if(confirm("Delete this?")) remove(ref(db, 'transports/' + key)); };
+        window.deleteData = (key) => { if(confirm("Delete this entry?")) remove(ref(db, 'transports/' + key)); };
         
         window.editData = (key) => {
             const t = allData[key];
             document.getElementById('tName').value = t.name;
             document.getElementById('tNumbers').value = t.numbers;
             document.getElementById('tVillages').value = t.villages;
-            alert("Data loaded to inputs for editing. Click Save to update.");
+            window.scrollTo(0,0);
         };
 
         window.downloadJSON = () => {
