@@ -1,75 +1,69 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transport App</title>
+    <title>Advanced Transport Manager Pro</title>
+
+    <!-- CSS -->
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; margin: 0; }
-        .box { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
-        input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        .btn { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        .item { background: #fff; padding: 10px; border-bottom: 1px solid #ddd; }
+        /* Dark Mode */
+        /* Dashboard */
+        /* Cards */
+        /* Search */
+        /* Mobile Responsive */
     </style>
 </head>
+
 <body>
 
-    <h2>Transport App</h2>
-    
-    <div class="box">
-        <input type="text" id="tName" placeholder="Transport Name">
-        <input type="text" id="tNumbers" placeholder="Mobile Number">
-        <input type="text" id="tVillages" placeholder="Village Name">
-        <button class="btn" onclick="saveData()">Save Data</button>
-    </div>
+    <!-- Dashboard -->
+    <div id="dashboard"></div>
 
-    <div class="box">
-        <input type="text" id="sInput" placeholder="Search here..." oninput="searchData()">
-        <div id="results"></div>
-    </div>
+    <!-- Search + Voice Search -->
+    <input id="searchBox">
+    <button>🎤</button>
+
+    <!-- Entry Form -->
+    <input id="transportName">
+    <input id="mobileNumber">
+    <input id="villages">
+
+    <!-- Single AI Voice Entry -->
+    <button>🎙 Smart Voice Entry</button>
+
+    <!-- Save -->
+    <button>Save</button>
+
+    <!-- Backup -->
+    <button>Export JSON</button>
+    <button>Export CSV</button>
+
+    <!-- Restore -->
+    <input type="file">
+
+    <!-- Search Results -->
+    <div id="results"></div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        const db = getDatabase(initializeApp({databaseURL: "https://transport-fe3d9-default-rtdb.asia-southeast1.firebasedatabase.app/"}));
-        
-        let localData = {}; // यहाँ सारा डेटा स्टोर होगा
+        // Firebase
 
-        onValue(ref(db, 'transports'), (snap) => {
-            localData = snap.val() || {}; // डेटा आते ही यहाँ सेव हो जाएगा
-        });
+        // Smart Voice Recognition
 
-        window.saveData = () => {
-            push(ref(db, 'transports'), {
-                name: document.getElementById('tName').value,
-                numbers: document.getElementById('tNumbers').value,
-                villages: document.getElementById('tVillages').value
-            }).then(() => alert("Saved!"));
-        };
+        // WhatsApp Button
 
-        window.searchData = () => {
-            const query = document.getElementById('sInput').value.toLowerCase();
-            const container = document.getElementById('results');
-            container.innerHTML = "";
-            
-            if (query === "") return;
+        // Call Button
 
-            // हर बार localData से चेक करेगा
-            for (let id in localData) {
-                let item = localData[id];
-                let name = (item.name || "").toLowerCase();
-                let vil = (item.villages || "").toLowerCase();
+        // Backup Restore
 
-                if (name.includes(query) || vil.includes(query)) {
-                    container.innerHTML += `<div class="item">
-                        <strong>${item.name}</strong><br>
-                        ${item.numbers}<br>
-                        ${item.villages}
-                    </div>`;
-                }
-            }
-        };
+        // Smart Search
+
+        // Dashboard Counter
+
+        // Offline PWA
+
+        // Dark Mode
+
     </script>
+
 </body>
 </html>
