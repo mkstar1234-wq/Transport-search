@@ -6,154 +6,59 @@
     <title>Cloud Transport Manager</title>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
         :root {
-            --blue: #1a73e8;
-            --blue-dark: #1557b0;
-            --green: #1e8e3e;
-            --red: #d93025;
-            --orange: #f29900;
-            --bg: #f0f4ff;
-            --card: #ffffff;
-            --border: #dadce0;
-            --text: #202124;
-            --muted: #5f6368;
-            --radius: 14px;
-            --shadow: 0 4px 20px rgba(26,115,232,0.10);
+            --blue: #1a73e8; --green: #1e8e3e; --red: #d93025;
+            --orange: #f29900; --bg: #f0f4ff; --card: #ffffff;
+            --border: #dadce0; --text: #202124; --muted: #5f6368;
+            --radius: 14px; --shadow: 0 4px 20px rgba(26,115,232,0.10);
         }
-
-        html, body {
-            height: 100%; background: var(--bg);
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            color: var(--text); font-size: 15px;
-        }
-
-        body {
-            display: flex; flex-direction: column;
-            max-width: 460px; margin: 0 auto;
-            padding: 12px 12px 20px; gap: 10px;
-            overflow-y: auto; overflow-x: hidden;
-        }
-
-        /* ── Header ── */
-        .app-header {
-            display: flex; align-items: center; gap: 10px;
-            padding: 4px 0 2px;
-        }
+        html, body { height: 100%; background: var(--bg); font-family: 'Segoe UI', system-ui, sans-serif; color: var(--text); font-size: 15px; }
+        body { display: flex; flex-direction: column; max-width: 460px; margin: 0 auto; padding: 12px 12px 20px; gap: 10px; overflow-y: auto; }
+        .app-header { display: flex; align-items: center; gap: 10px; padding: 4px 0 2px; }
         .app-header .logo { font-size: 28px; }
         .app-header h1 { font-size: 20px; font-weight: 700; color: var(--blue); line-height: 1.1; }
         .app-header h1 small { display: block; font-size: 11px; font-weight: 400; color: var(--muted); }
-
-        /* ── Status pill ── */
-        #connectionStatus {
-            display: inline-flex; align-items: center; gap: 6px;
-            font-size: 12px; font-weight: 600; padding: 4px 12px;
-            border-radius: 20px; background: #fff3e0; color: #e65100;
-            align-self: flex-start; transition: all .3s;
-        }
+        #connectionStatus { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; background: #fff3e0; color: #e65100; align-self: flex-start; transition: all .3s; }
         #connectionStatus.connected { background: #e6f4ea; color: var(--green); }
         #connectionStatus::before { content: '●'; font-size: 9px; }
-
-        /* ── Cards ── */
-        .card {
-            background: var(--card); border-radius: var(--radius);
-            box-shadow: var(--shadow); border: 1px solid #e8eaf0;
-            padding: 14px;
-        }
-        .card-title {
-            font-size: 11px; font-weight: 700; color: var(--muted);
-            text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px;
-        }
-
-        /* ── Magic Button ── */
-        .magic-btn {
-            width: 100%; padding: 15px;
-            background: linear-gradient(135deg, #ff6b6b 0%, #c0392b 100%);
-            color: #fff; font-size: 15px; font-weight: 700;
-            border: none; border-radius: 30px; cursor: pointer;
-            box-shadow: 0 4px 18px rgba(192,57,43,.35);
-            animation: pulse 2.4s infinite; transition: opacity .15s;
-        }
+        .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid #e8eaf0; padding: 14px; }
+        .card-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+        .magic-btn { width: 100%; padding: 15px; background: linear-gradient(135deg, #ff6b6b 0%, #c0392b 100%); color: #fff; font-size: 15px; font-weight: 700; border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 18px rgba(192,57,43,.35); animation: pulse 2.4s infinite; transition: opacity .15s; }
         .magic-btn:active { opacity: .85; }
-        @keyframes pulse {
-            0%,100% { box-shadow: 0 4px 18px rgba(192,57,43,.35); }
-            50%       { box-shadow: 0 4px 28px rgba(192,57,43,.55); }
-        }
-
-        /* ── Input group ── */
+        @keyframes pulse { 0%,100% { box-shadow: 0 4px 18px rgba(192,57,43,.35); } 50% { box-shadow: 0 4px 28px rgba(192,57,43,.55); } }
         .field { margin-bottom: 10px; }
         .field label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
         .input-wrap { position: relative; display: flex; align-items: center; }
-        .input-wrap input {
-            width: 100%; padding: 11px 42px 11px 12px;
-            border: 1.5px solid var(--border); border-radius: 8px;
-            font-size: 14px; color: var(--text); background: #fafbff;
-            transition: border-color .2s, background .2s;
-        }
+        .input-wrap input { width: 100%; padding: 11px 42px 11px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; color: var(--text); background: #fafbff; transition: border-color .2s, background .2s; }
         .input-wrap input:focus { border-color: var(--blue); outline: none; background: #fff; }
         .input-wrap input.mic-active { border-color: var(--green); background: #e6f4ea; }
-
-        .mic-btn {
-            position: absolute; right: 6px;
-            background: none; border: none; cursor: pointer;
-            font-size: 18px; padding: 6px; color: var(--blue);
-            line-height: 1; transition: transform .15s;
-        }
+        #searchInput { width: 100%; padding: 11px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; background: #fafbff; }
+        #searchInput:focus { border-color: var(--blue); outline: none; background: #fff; }
+        .mic-btn { position: absolute; right: 6px; background: none; border: none; cursor: pointer; font-size: 18px; padding: 6px; color: var(--blue); line-height: 1; transition: transform .15s; }
         .mic-btn:active { transform: scale(.9); }
         .mic-btn.listening { color: var(--green); animation: micPulse .8s infinite; }
         @keyframes micPulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-
-        /* ── Save Button ── */
-        .save-btn {
-            width: 100%; padding: 13px; border: none; border-radius: 10px;
-            font-size: 15px; font-weight: 700; color: #fff; cursor: pointer;
-            background: var(--blue); margin-top: 4px;
-            transition: background .2s, transform .1s;
-        }
+        .save-btn { width: 100%; padding: 13px; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; color: #fff; cursor: pointer; background: var(--blue); margin-top: 4px; transition: background .2s, transform .1s; }
         .save-btn:active { transform: scale(.98); }
         .save-btn.edit-mode { background: #007bc4; }
-
-        /* ── Search results ── */
-        #searchResults { margin-top: 8px; max-height: 200px; overflow-y: auto; }
-        .result-item {
-            background: #e8f0fe; border-left: 4px solid var(--blue);
-            border-radius: 8px; padding: 11px 12px; margin-bottom: 8px;
-            font-size: 13px;
-        }
+        #searchResults { margin-top: 8px; max-height: 260px; overflow-y: auto; }
+        .result-item { background: #e8f0fe; border-left: 4px solid var(--blue); border-radius: 8px; padding: 11px 12px; margin-bottom: 8px; font-size: 13px; }
         .result-name { color: var(--blue); font-size: 15px; font-weight: 700; }
         .result-meta { color: var(--muted); font-size: 12px; margin: 3px 0; }
         .result-villages { color: var(--green); font-weight: 600; font-size: 13px; }
         .highlight { background: #fff263; padding: 0 2px; border-radius: 2px; font-weight: 700; }
         .result-actions { display: flex; gap: 6px; margin-top: 8px; }
-        .edit-btn, .delete-btn {
-            flex: 1; padding: 6px; border: none; border-radius: 6px;
-            font-size: 12px; font-weight: 600; cursor: pointer;
-        }
+        .edit-btn, .delete-btn { flex: 1; padding: 6px; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
         .edit-btn { background: var(--blue); color: #fff; }
         .delete-btn { background: var(--red); color: #fff; }
         .empty-msg { color: var(--red); font-size: 13px; font-weight: 600; padding: 6px 0; }
-
-        .download-btn {
-            width: 100%; padding: 13px; border: none; border-radius: 10px;
-            font-size: 14px; font-weight: 700; color: #fff; cursor: pointer;
-            background: linear-gradient(135deg, #1e8e3e, #137333);
-            box-shadow: 0 4px 14px rgba(30,142,62,.25);
-            transition: opacity .15s;
-        }
+        .download-btn { width: 100%; padding: 13px; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; color: #fff; cursor: pointer; background: linear-gradient(135deg, #1e8e3e, #137333); box-shadow: 0 4px 14px rgba(30,142,62,.25); transition: opacity .15s; }
         .download-btn:active { opacity: .85; }
-
-        /* ── Toast Notification ── */
-        #toast {
-            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
-            background: #202124; color: #fff; padding: 12px 22px;
-            border-radius: 24px; font-size: 14px; font-weight: 600;
-            box-shadow: 0 4px 20px rgba(0,0,0,.25); z-index: 999;
-            transition: transform .35s cubic-bezier(.34,1.56,.64,1), opacity .35s;
-            opacity: 0; white-space: nowrap;
-        }
+        #debugBox { background: #fff8e1; border: 1px solid #f9a825; border-radius: 8px; padding: 10px; font-size: 11px; color: #333; word-break: break-all; margin-top: 4px; display: none; }
+        #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #202124; color: #fff; padding: 12px 22px; border-radius: 24px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 20px rgba(0,0,0,.25); z-index: 999; transition: transform .35s cubic-bezier(.34,1.56,.64,1), opacity .35s; opacity: 0; white-space: nowrap; }
         #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
         #toast.success { background: var(--green); }
-        #toast.error   { background: var(--red); }
+        #toast.error { background: var(--red); }
         #toast.warning { background: var(--orange); color: #202124; }
     </style>
 </head>
@@ -173,10 +78,9 @@
     <!-- Search -->
     <div class="card">
         <div class="card-title">🔍 Search — Village या Transport Name</div>
-        <div class="input-wrap">
-            <input type="text" id="searchInput" placeholder="गाँव या transport का नाम लिखें...">
-        </div>
+        <input type="text" id="searchInput" placeholder="गाँव या transport का नाम लिखें...">
         <div id="searchResults"></div>
+        <div id="debugBox"></div>
     </div>
 
     <!-- JSON Download -->
@@ -215,51 +119,69 @@
 
     <div id="toast"></div>
 
-    <!-- Firebase SDK (non-module, compat version) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
     <script>
-        /* ── Firebase Init ── */
-        const firebaseConfig = {
+        var firebaseConfig = {
             databaseURL: "https://transport-fe3d9-default-rtdb.asia-southeast1.firebasedatabase.app/"
         };
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const transportsRef = db.ref('transports');
+        var db = firebase.database();
+        var transportsRef = db.ref('transports');
 
-        /* ── State ── */
-        let transportData  = {};
-        let currentEditKey = null;
+        var transportData = {};
+        var currentEditKey = null;
 
-        /* ── Firebase Real-time Listener ── */
-        transportsRef.on('value', (snapshot) => {
-            transportData = snapshot.val() ?? {};
-            const statusEl = document.getElementById("connectionStatus");
+        // ── DEBUG: Firebase se data fetch aur console mein dekho ──
+        transportsRef.on('value', function(snapshot) {
+            var raw = snapshot.val();
+            console.log("Firebase raw data:", raw);
+
+            // Debug box mein dikhao
+            var debugBox = document.getElementById("debugBox");
+            if (raw) {
+                debugBox.style.display = "block";
+                debugBox.innerHTML = "<b>✅ Firebase Data Loaded:</b><br>" +
+                    Object.keys(raw).length + " records मिले। पहला record: <br>" +
+                    JSON.stringify(Object.values(raw)[0], null, 2);
+                transportData = raw;
+            } else {
+                debugBox.style.display = "block";
+                debugBox.innerHTML = "<b>⚠️ Firebase में कोई data नहीं है।</b>";
+                transportData = {};
+            }
+
+            var statusEl = document.getElementById("connectionStatus");
             statusEl.textContent = "✅ Cloud Server से Connected";
             statusEl.classList.add("connected");
-            // Search box में कुछ लिखा है तो results refresh करो
-            const q = document.getElementById("searchInput").value.trim();
+
+            var q = document.getElementById("searchInput").value.trim();
             if (q) searchVillage(q);
-        }, (err) => {
-            document.getElementById("connectionStatus").textContent = "❌ Connection Failed";
+
+        }, function(err) {
+            document.getElementById("connectionStatus").textContent = "❌ Connection Failed: " + err.message;
+            var debugBox = document.getElementById("debugBox");
+            debugBox.style.display = "block";
+            debugBox.innerHTML = "<b>❌ Error:</b> " + err.message;
         });
 
-        /* ── Toast ── */
-        function showToast(msg, type = "success", duration = 3000) {
-            const t = document.getElementById("toast");
+        function showToast(msg, type, duration) {
+            type = type || "success";
+            duration = duration || 3000;
+            var t = document.getElementById("toast");
             t.textContent = msg;
-            t.className = `show ${type}`;
+            t.className = "show " + type;
             clearTimeout(t._timer);
-            t._timer = setTimeout(() => { t.className = ""; }, duration);
+            t._timer = setTimeout(function() { t.className = ""; }, duration);
         }
 
-        /* ── Input Processing ── */
         function processInput(text, fieldType) {
-            const trimmed = text.trim();
+            var trimmed = text.trim();
             if (fieldType === 'numbers') {
-                const digits = trimmed.replace(/\D/g, '');
-                return digits.match(/.{1,10}/g)?.join(', ') ?? digits;
+                var digits = trimmed.replace(/\D/g, '');
+                var chunks = digits.match(/.{1,10}/g);
+                return chunks ? chunks.join(', ') : digits;
             }
             if (fieldType === 'villages') {
                 return trimmed.replace(/[,\s]+/g, ', ').replace(/,\s*$/, '').toLowerCase();
@@ -267,38 +189,34 @@
             return trimmed;
         }
 
-        /* ── Voice Recognition ── */
         function listenAndFill(fieldType, inputId, micId) {
-            return new Promise((resolve, reject) => {
-                const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            return new Promise(function(resolve, reject) {
+                var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
                 if (!SR) {
-                    showToast("⚠️ आपका browser voice typing support नहीं करता", "warning");
+                    showToast("⚠️ Browser voice support नहीं करता", "warning");
                     reject("not-supported"); return;
                 }
-                const input      = document.getElementById(inputId);
-                const micBtn     = document.getElementById(micId);
-                const recognition = new SR();
-                recognition.lang            = 'en-IN';
-                recognition.interimResults  = false;
+                var input = document.getElementById(inputId);
+                var micBtn = document.getElementById(micId);
+                var recognition = new SR();
+                recognition.lang = 'en-IN';
+                recognition.interimResults = false;
                 recognition.maxAlternatives = 1;
-
-                const origPlaceholder = input.placeholder;
+                var origPlaceholder = input.placeholder;
                 input.placeholder = "🎤 बोलिए...";
                 input.classList.add('mic-active');
                 if (micBtn) micBtn.classList.add('listening');
-
-                let gotResult = false;
-
-                recognition.onresult = (e) => {
+                var gotResult = false;
+                recognition.onresult = function(e) {
                     gotResult = true;
                     input.value = processInput(e.results[0][0].transcript, fieldType);
                     resolve(true);
                 };
-                recognition.onerror = (e) => {
-                    if (e.error !== 'no-speech') showToast(`Mic error: ${e.error}`, "error");
+                recognition.onerror = function(e) {
+                    if (e.error !== 'no-speech') showToast("Mic error: " + e.error, "error");
                     reject(e.error);
                 };
-                recognition.onend = () => {
+                recognition.onend = function() {
                     input.placeholder = origPlaceholder;
                     input.classList.remove('mic-active');
                     if (micBtn) micBtn.classList.remove('listening');
@@ -308,48 +226,44 @@
             });
         }
 
-        /* ── Magic Button Flow ── */
         async function startMagicFlow() {
-            const btn = document.getElementById("magicBtn");
-            const steps = [
-                { label: "🎤 1/3: Transport का नाम बोलें...", field: 'name',     inputId: 'transportName',    micId: 'mic-name'    },
-                { label: "🎤 2/3: Mobile Number बोलें...",    field: 'numbers',  inputId: 'transportNumbers', micId: 'mic-numbers' },
-                { label: "🎤 3/3: Village Names बोलें...",    field: 'villages', inputId: 'villageNames',     micId: 'mic-villages'},
+            var btn = document.getElementById("magicBtn");
+            var steps = [
+                { label: "🎤 1/3: Transport का नाम बोलें...", field: 'name', inputId: 'transportName', micId: 'mic-name' },
+                { label: "🎤 2/3: Mobile Number बोलें...", field: 'numbers', inputId: 'transportNumbers', micId: 'mic-numbers' },
+                { label: "🎤 3/3: Village Names बोलें...", field: 'villages', inputId: 'villageNames', micId: 'mic-villages' }
             ];
-            const original = btn.textContent;
+            var original = btn.textContent;
             try {
-                for (const step of steps) {
-                    btn.textContent = step.label;
-                    await listenAndFill(step.field, step.inputId, step.micId);
-                    await new Promise(r => setTimeout(r, 400));
+                for (var i = 0; i < steps.length; i++) {
+                    btn.textContent = steps[i].label;
+                    await listenAndFill(steps[i].field, steps[i].inputId, steps[i].micId);
+                    await new Promise(function(r) { setTimeout(r, 400); });
                 }
                 btn.textContent = "✅ Data Fill हो गया — Save करें!";
-            } catch {
+            } catch(e) {
                 btn.textContent = "⚠️ Voice रुक गई — फिर try करें";
             } finally {
-                setTimeout(() => { btn.textContent = original; }, 3500);
+                setTimeout(function() { btn.textContent = original; }, 3500);
             }
         }
 
-        /* ── Individual Mic ── */
         function startRealVoice(fieldType, inputId, micId) {
-            listenAndFill(fieldType, inputId, micId).catch(() => {});
+            listenAndFill(fieldType, inputId, micId).catch(function() {});
         }
 
-        /* ── Save / Update ── */
         async function addTransport() {
-            const name     = document.getElementById("transportName").value.trim();
-            const numbers  = document.getElementById("transportNumbers").value.trim();
-            const villages = document.getElementById("villageNames").value.trim().toLowerCase();
-
+            var name = document.getElementById("transportName").value.trim();
+            var numbers = document.getElementById("transportNumbers").value.trim();
+            var villages = document.getElementById("villageNames").value.trim().toLowerCase();
             if (!name || !villages) {
                 showToast("⚠️ Transport Name और Villages ज़रूरी हैं!", "warning");
                 return;
             }
-            const entry = {
-                name,
-                numbers,
-                villages: villages.split(",").map(v => v.trim()).filter(Boolean),
+            var entry = {
+                name: name,
+                numbers: numbers,
+                villages: villages.split(",").map(function(v) { return v.trim(); }).filter(Boolean),
                 updatedAt: Date.now()
             };
             try {
@@ -361,106 +275,120 @@
                     showToast("✅ Data Save हो गया!", "success");
                 }
                 resetForm();
-            } catch (err) {
+            } catch(err) {
                 showToast("❌ Save नहीं हुआ: " + err.message, "error");
             }
         }
 
-        /* ── Reset Form ── */
         function resetForm() {
-            ["transportName","transportNumbers","villageNames"].forEach(id => {
+            ["transportName","transportNumbers","villageNames"].forEach(function(id) {
                 document.getElementById(id).value = "";
             });
             currentEditKey = null;
             document.getElementById("formTitle").textContent = "✏️ नई Entry जोड़ें";
-            const btn = document.getElementById("saveBtn");
+            var btn = document.getElementById("saveBtn");
             btn.textContent = "💾 Save करें";
             btn.classList.remove("edit-mode");
         }
 
-        /* ── Edit Entry ── */
         function editEntry(key) {
-            const item = transportData[key];
+            var item = transportData[key];
             if (!item) return;
             currentEditKey = key;
-            document.getElementById("transportName").value    = item.name    || "";
+            document.getElementById("transportName").value = item.name || "";
             document.getElementById("transportNumbers").value = item.numbers || "";
-            document.getElementById("villageNames").value     = item.villages ? item.villages.join(", ") : "";
-            document.getElementById("formTitle").textContent  = `📝 Edit: ${item.name}`;
-            const btn = document.getElementById("saveBtn");
+            document.getElementById("villageNames").value = item.villages ? item.villages.join(", ") : "";
+            document.getElementById("formTitle").textContent = "📝 Edit: " + item.name;
+            var btn = document.getElementById("saveBtn");
             btn.textContent = "✏️ Update करें";
             btn.classList.add("edit-mode");
             document.getElementById("transportName").scrollIntoView({ behavior: "smooth", block: "center" });
         }
 
-        /* ── Delete Entry ── */
         async function deleteEntry(key) {
             if (!confirm("क्या आप सच में यह data delete करना चाहते हैं?")) return;
             try {
                 await db.ref('transports/' + key).remove();
                 showToast("🗑️ Data Delete हो गया", "success");
-            } catch (err) {
+            } catch(err) {
                 showToast("❌ Delete नहीं हुआ: " + err.message, "error");
             }
         }
 
-        /* ── Search (Debounced + Real-time) ── */
-        let searchTimer;
-        document.getElementById("searchInput").addEventListener("input", (e) => {
-            clearTimeout(searchTimer);
-            searchTimer = setTimeout(() => searchVillage(e.target.value.trim()), 200);
+        // Search — input event
+        document.getElementById("searchInput").addEventListener("input", function() {
+            var q = this.value.trim();
+            searchVillage(q);
         });
 
         function searchVillage(query) {
-            const q = (query || "").toLowerCase().trim();
-            const resultsDiv = document.getElementById("searchResults");
+            var q = (query || "").toLowerCase().trim();
+            var resultsDiv = document.getElementById("searchResults");
             resultsDiv.innerHTML = "";
             if (!q) return;
 
-            const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const regex   = new RegExp(escaped, "gi");
+            var escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            var regex = new RegExp(escaped, "gi");
 
-            // ✅ Transport name + Village name दोनों में search
-            const matches = Object.entries(transportData).filter(([, t]) => {
-                const nameMatch    = t.name && t.name.toLowerCase().includes(q);
-                const villageMatch = t.villages && t.villages.some(v => v.toLowerCase().includes(q));
-                return nameMatch || villageMatch;
-            });
+            var keys = Object.keys(transportData);
+            console.log("Searching:", q, "| Total records:", keys.length);
 
-            if (!matches.length) {
-                resultsDiv.innerHTML = `<div class="empty-msg">❌ कोई result नहीं मिला।</div>`;
+            var matches = [];
+            for (var i = 0; i < keys.length; i++) {
+                var key = keys[i];
+                var t = transportData[key];
+                var nameMatch = t.name && t.name.toLowerCase().indexOf(q) !== -1;
+                var villageMatch = false;
+                if (t.villages && Array.isArray(t.villages)) {
+                    for (var j = 0; j < t.villages.length; j++) {
+                        if (t.villages[j].toLowerCase().indexOf(q) !== -1) {
+                            villageMatch = true;
+                            break;
+                        }
+                    }
+                }
+                if (nameMatch || villageMatch) {
+                    matches.push([key, t]);
+                }
+            }
+
+            console.log("Matches found:", matches.length);
+
+            if (matches.length === 0) {
+                resultsDiv.innerHTML = '<div class="empty-msg">❌ कोई result नहीं मिला। (Records: ' + keys.length + ')</div>';
                 return;
             }
 
-            matches.forEach(([key, t]) => {
-                const villageStr      = (t.villages || []).join(", ");
-                const highlightedVill = villageStr.replace(regex, m => `<span class="highlight">${m}</span>`);
-                const highlightedName = (t.name || "").replace(regex, m => `<span class="highlight">${m}</span>`);
-                const el = document.createElement("div");
+            matches.forEach(function(pair) {
+                var key = pair[0];
+                var t = pair[1];
+                var villageStr = (t.villages || []).join(", ");
+                var highlightedVill = villageStr.replace(regex, function(m) { return '<span class="highlight">' + m + '</span>'; });
+                var highlightedName = (t.name || "").replace(regex, function(m) { return '<span class="highlight">' + m + '</span>'; });
+                var el = document.createElement("div");
                 el.className = "result-item";
-                el.innerHTML = `
-                    <div class="result-name">${highlightedName}</div>
-                    <div class="result-meta">📞 ${t.numbers || 'N/A'}</div>
-                    <div class="result-villages">🏘️ ${highlightedVill || '—'}</div>
-                    <div class="result-actions">
-                        <button class="edit-btn"   onclick="editEntry('${key}')">✏️ Edit</button>
-                        <button class="delete-btn" onclick="deleteEntry('${key}')">🗑️ Delete</button>
-                    </div>`;
+                el.innerHTML =
+                    '<div class="result-name">' + highlightedName + '</div>' +
+                    '<div class="result-meta">📞 ' + (t.numbers || 'N/A') + '</div>' +
+                    '<div class="result-villages">🏘️ ' + (highlightedVill || '—') + '</div>' +
+                    '<div class="result-actions">' +
+                        '<button class="edit-btn" onclick="editEntry(\'' + key + '\')">✏️ Edit</button>' +
+                        '<button class="delete-btn" onclick="deleteEntry(\'' + key + '\')">🗑️ Delete</button>' +
+                    '</div>';
                 resultsDiv.appendChild(el);
             });
         }
 
-        /* ── JSON Download ── */
         function downloadJSON() {
             if (!Object.keys(transportData).length) {
                 showToast("⚠️ Download करने के लिए कोई data नहीं है!", "warning");
                 return;
             }
-            const blob = new Blob([JSON.stringify(transportData, null, 2)], { type: "application/json" });
-            const url  = URL.createObjectURL(blob);
-            const a    = document.createElement("a");
-            a.href     = url;
-            a.download = `transport-backup-${new Date().toISOString().slice(0,10)}.json`;
+            var blob = new Blob([JSON.stringify(transportData, null, 2)], { type: "application/json" });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement("a");
+            a.href = url;
+            a.download = "transport-backup-" + new Date().toISOString().slice(0,10) + ".json";
             a.click();
             URL.revokeObjectURL(url);
             showToast("✅ JSON Download हो गया!", "success");
