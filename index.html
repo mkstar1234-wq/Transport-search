@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Transport App</title>
+    <title>Transport App</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; }
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; margin: 0; }
         .box { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
         input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         .btn { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
@@ -24,7 +24,7 @@
     </div>
 
     <div class="box">
-        <input type="text" id="sInput" placeholder="Search..." oninput="searchData()">
+        <input type="text" id="sInput" placeholder="Search here..." oninput="searchData()">
         <div id="results"></div>
     </div>
 
@@ -34,10 +34,10 @@
 
         const db = getDatabase(initializeApp({databaseURL: "https://transport-fe3d9-default-rtdb.asia-southeast1.firebasedatabase.app/"}));
         
-        let dbData = [];
+        let localData = {}; // यहाँ सारा डेटा स्टोर होगा
+
         onValue(ref(db, 'transports'), (snap) => {
-            const val = snap.val();
-            dbData = val ? Object.values(val) : [];
+            localData = snap.val() || {}; // डेटा आते ही यहाँ सेव हो जाएगा
         });
 
         window.saveData = () => {
@@ -55,11 +55,20 @@
             
             if (query === "") return;
 
-            dbData.forEach(item => {
-                if (item.name.toLowerCase().includes(query) || item.villages.toLowerCase().includes(query)) {
-                    container.innerHTML += `<div class="item"><strong>${item.name}</strong><br>${item.numbers}<br>${item.villages}</div>`;
+            // हर बार localData से चेक करेगा
+            for (let id in localData) {
+                let item = localData[id];
+                let name = (item.name || "").toLowerCase();
+                let vil = (item.villages || "").toLowerCase();
+
+                if (name.includes(query) || vil.includes(query)) {
+                    container.innerHTML += `<div class="item">
+                        <strong>${item.name}</strong><br>
+                        ${item.numbers}<br>
+                        ${item.villages}
+                    </div>`;
                 }
-            });
+            }
         };
     </script>
 </body>
