@@ -1,243 +1,108 @@
-<!DOCTYPE html>
-<html lang="hi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transport Manager Pro</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 15px;
-            background: #f4f6f9;
-        }
-        .dark {
-            background: #111;
-            color: #fff;
-        }
-        .card {
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .dark .card {
-            background: #222;
-        }
-        input {
-            width: 100%;
-            padding: 10px;
-            margin: 5px 0;
-            box-sizing: border-box;
-        }
-        button {
-            padding: 10px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            margin: 3px;
-        }
-        .save { background: #1a73e8; color: white; }
-        .delete { background: red; color: white; }
-        .edit { background: orange; color: white; }
-        .call { background: green; color: white; }
-        .wa { background: #25D366; color: white; }
-        .result {
-            padding: 10px;
-            border: 1px solid #ddd;
-            margin-top: 8px;
-            border-radius: 8px;
-        }
-        .stats {
-            display: flex;
-            justify-content: space-between;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
+<div class="action-container">
+    <a href="tel:${t.numbers}">
+        <button class="edit-btn">📞 Call</button>
+    </a>
 
-    <h2>🚚 Transport Manager Pro</h2>
-    <button onclick="toggleDark()">🌙 Dark Mode</button>
+    <a href="https://wa.me/91${t.numbers}" target="_blank">
+        <button class="edit-btn">💬 WhatsApp</button>
+    </a>
 
-    <div class="card">
-        <div class="stats">
-            <div>Total: <span id="totalCount">0</span></div>
-            <div>Villages: <span id="villageCount">0</span></div>
-        </div>
-    </div>
+    <button class="edit-btn" onclick="editEntry('${key}')">✏️ Edit</button>
 
-    <div class="card">
-        <input id="searchBox" placeholder="Village Search..." onkeyup="searchVillage()">
-    </div>
+    <button class="delete-btn" onclick="deleteEntry('${key}')">🗑️ Delete</button>
+</div>
+<button onclick="toggleDarkMode()" class="save-btn">
+🌙 Dark Mode
+</button>
+window.toggleDarkMode = function(){
 
-    <div class="card">
-        <input id="name" placeholder="Transport Name">
-        <input id="number" placeholder="Mobile Number">
-        <input id="villages" placeholder="Village Names (comma separated)">
-        <button class="save" onclick="saveData()">Save</button>
-    </div>
+ document.body.classList.toggle("dark-mode");
 
-    <div class="card">
-        <button onclick="backupData()">Backup JSON</button>
-        <input type="file" onchange="restoreData(event)">
-    </div>
+ if(document.body.classList.contains("dark-mode")){
+   localStorage.setItem("theme","dark");
+ }else{
+   localStorage.setItem("theme","light");
+ }
 
-    <div id="results"></div>
+}
+.dark-mode{
+ background:#111 !important;
+ color:white !important;
+}
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, push, onValue, remove, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+.dark-mode .card{
+ background:#222 !important;
+ color:white !important;
+}
 
-        const firebaseConfig = {
-            databaseURL: "https://transport-fe3d9-default-rtdb.asia-southeast1.firebasedatabase.app/"
-        };
+.dark-mode input{
+ background:#333;
+ color:white;
+ border:1px solid #555;
+}
+<div class="card">
+   <h3>Dashboard</h3>
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const transportRef = ref(db, "transports");
+   Total Transport :
+   <span id="totalTransport">0</span>
 
-        let dataStore = {};
-        let editKey = null;
+   <br><br>
 
-        onValue(transportRef, (snap) => {
-            dataStore = snap.val() || {};
-            renderAll();
-        });
+   Total Villages :
+   <span id="totalVillage">0</span>
+</div>
+let totalTransport =
+Object.keys(transportData).length;
 
-        window.saveData = function () {
-            const name = document.getElementById("name").value.trim();
-            const number = document.getElementById("number").value.trim();
-            const villages = document.getElementById("villages").value.trim();
+document.getElementById(
+"totalTransport"
+).innerText = totalTransport;
 
-            if (!name || !villages) {
-                alert("Name and Village required");
-                return;
-            }
+let villageSet = new Set();
 
-            const obj = {
-                name,
-                number,
-                villages: villages.split(",").map(v => v.trim())
-            };
+Object.values(transportData).forEach(item=>{
 
-            if (editKey) {
-                set(ref(db, "transports/" + editKey), obj);
-                editKey = null;
-            } else {
-                push(transportRef, obj);
-            }
+ if(item.villages){
 
-            clearForm();
-        }
+  item.villages.forEach(v=>{
+   villageSet.add(v);
+  });
 
-        function clearForm() {
-            document.getElementById("name").value = "";
-            document.getElementById("number").value = "";
-            document.getElementById("villages").value = "";
-        }
+ }
 
-        function renderAll() {
-            let html = "";
-            let villageSet = new Set();
+});
 
-            Object.keys(dataStore).forEach(key => {
-                const item = dataStore[key];
-                (item.villages || []).forEach(v => villageSet.add(v));
+document.getElementById(
+"totalVillage"
+).innerText = villageSet.size;
+<button class="save-btn"
+onclick="backupData()">
+💾 Backup JSON
+</button>
+window.backupData = function(){
 
-                html += `
-                    <div class="result">
-                        <b>${item.name}</b><br>
-                        📞 ${item.number || "-"}<br>
-                        🏠 ${(item.villages || []).join(", ")}<br>
-                        <a href="tel:${item.number}">
-                            <button class="call">Call</button>
-                        </a>
-                        <a href="https://wa.me/91${item.number}" target="_blank">
-                            <button class="wa">WhatsApp</button>
-                        </a>
-                        <button class="edit" onclick="editData('${key}')">Edit</button>
-                        <button class="delete" onclick="deleteData('${key}')">Delete</button>
-                    </div>
-                `;
-            });
+ const blob = new Blob(
+  [
+   JSON.stringify(
+    transportData,
+    null,
+    2
+   )
+  ],
+  {
+   type:"application/json"
+  }
+ );
 
-            document.getElementById("results").innerHTML = html;
-            document.getElementById("totalCount").innerText = Object.keys(dataStore).length;
-            document.getElementById("villageCount").innerText = villageSet.size;
-        }
+ const a =
+ document.createElement("a");
 
-        window.editData = function (key) {
-            const item = dataStore[key];
-            document.getElementById("name").value = item.name;
-            document.getElementById("number").value = item.number || "";
-            document.getElementById("villages").value = (item.villages || []).join(",");
-            editKey = key;
-        }
+ a.href =
+ URL.createObjectURL(blob);
 
-        window.deleteData = function (key) {
-            if (confirm("Delete?")) {
-                remove(ref(db, "transports/" + key));
-            }
-        }
+ a.download =
+ "transport-backup.json";
 
-        window.searchVillage = function () {
-            const txt = document.getElementById("searchBox").value.toLowerCase();
-            let html = "";
+ a.click();
 
-            Object.keys(dataStore).forEach(key => {
-                const item = dataStore[key];
-                const found = (item.villages || []).some(v => v.toLowerCase().includes(txt));
-                if (found || txt === "") {
-                    html += `
-                        <div class="result">
-                            <b>${item.name}</b><br>
-                            📞 ${item.number || "-"}<br>
-                            🏠 ${(item.villages || []).join(", ")}
-                        </div>
-                    `;
-                }
-            });
-
-            document.getElementById("results").innerHTML = html;
-        }
-
-        window.toggleDark = function () {
-            document.body.classList.toggle("dark");
-        }
-
-        window.backupData = function () {
-            const blob = new Blob(
-                [JSON.stringify(dataStore, null, 2)],
-                { type: "application/json" }
-            );
-
-            const a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
-            a.download = "transport-backup.json";
-            a.click();
-        }
-
-        window.restoreData = function (e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function (ev) {
-                try {
-                    const json = JSON.parse(ev.target.result);
-                    Object.values(json).forEach(item => {
-                        push(transportRef, item);
-                    });
-                    alert("Restore Complete");
-                } catch (err) {
-                    alert("Invalid JSON");
-                }
-            };
-            reader.readAsText(file);
-        }
-    </script>
-
-</body>
-</html>
+}
