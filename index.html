@@ -209,7 +209,17 @@
                 var gotResult = false;
                 recognition.onresult = function(e) {
                     gotResult = true;
-                    input.value = processInput(e.results[0][0].transcript, fieldType);
+                    var newText = processInput(e.results[0][0].transcript, fieldType);
+                    var existing = input.value.trim();
+                    if (existing) {
+                        if (fieldType === 'villages' || fieldType === 'numbers') {
+                            input.value = existing + ', ' + newText;
+                        } else {
+                            input.value = existing + ' ' + newText;
+                        }
+                    } else {
+                        input.value = newText;
+                    }
                     resolve(true);
                 };
                 recognition.onerror = function(e) {
